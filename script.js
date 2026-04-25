@@ -57,8 +57,9 @@ const FRAME_COUNT = 10;
 
 // AI detection threshold:  >= AI_THRESHOLD → "Likely AI"
 // Ambiguous band:           >= AMB_THRESHOLD && < AI_THRESHOLD
-const AI_THRESHOLD  = 0.55;
-const AMB_THRESHOLD = 0.40;
+// Human:                    < AMB_THRESHOLD → "Human"
+const AI_THRESHOLD  = 0.65;
+const AMB_THRESHOLD = 0.35;
 
 // Video signal weights (higher = more influence on final score)
 const VIDEO_WEIGHTS = {

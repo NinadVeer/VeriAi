@@ -23,7 +23,7 @@
         <span style="font-family:'DM Mono',monospace;font-size:12px;color:#c8f54a;letter-spacing:0.05em;">VeriAI</span>
       </div>
       
-      <div style="width:80px;"></div> <!-- spacer for balance -->
+      <div style="width:80px;"></div>
     </div>
   </nav>
 
@@ -127,22 +127,23 @@
     Powered by heuristic linguistic &amp; visual analysis · Results are probabilistic, not definitive
   </footer>
 
-  <!-- Supabase Library (MUST be before script.js) -->
+  <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Your main script -->
   <script src="script.js"></script>
 
-  <!-- Firebase Auth Guard -->
+  <!-- Firebase Auth - Setup user profile (only if logged in) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     // ─────────────────────────────────────────────────────────────
-    // 🔧 REPLACE with your Firebase config (same as login.html)
+    // 🔧 REPLACE with your Firebase config
     // ─────────────────────────────────────────────────────────────
-   const firebaseConfig = {
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
   apiKey: "AIzaSyBmcl44YTVLKrar8Q9504h5BOoMitL9pQk",
   authDomain: "veriai-184a1.firebaseapp.com",
   projectId: "veriai-184a1",
@@ -156,38 +157,15 @@
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Hide app content until auth is confirmed
-    document.querySelector('.container').style.visibility = 'hidden';
-
+    // Only show user profile if logged in
     onAuthStateChanged(auth, async user => {
       if (!user) {
-        // Not signed in → go to login
+        // Not logged in - redirect to login
         window.location.href = 'login.html';
         return;
       }
 
-      // Signed in → show the app
-      document.querySelector('.container').style.visibility = 'visible';
-
-      // ──── SUPABASE: Sync user ────
-      try {
-        const { error } = await window.supabaseClient
-          .from('users')
-          .upsert([
-            {
-              firebase_id: user.uid,
-              email: user.email,
-              name: user.displayName
-            }
-          ], { onConflict: 'firebase_id' });
-        
-        if (error) console.error('Error syncing user to Supabase:', error);
-        else console.log('User synced to Supabase:', user.uid);
-      } catch (err) {
-        console.error('Supabase sync error:', err);
-      }
-
-      // Inject user avatar + sign-out into header
+      // User is logged in - show profile
       const header = document.querySelector('header');
       const userBar = document.createElement('div');
       userBar.style.cssText = `
@@ -223,9 +201,24 @@
         window.location.href = 'login.html';
       });
 
-      // Store auth object globally so script.js can access it
+      // Make auth available globally
       window.firebaseAuth = auth;
       window.firebaseUser = user;
+
+      // Sync user to Supabase
+      try {
+        await window.supabaseClient
+          .from('users')
+          .upsert([
+            {
+              firebase_id: user.uid,
+              email: user.email,
+              name: user.displayName
+            }
+          ], { onConflict: 'firebase_id' });
+      } catch (err) {
+        console.warn('Supabase sync:', err.message);
+      }
     });
   </script>
 </body>
