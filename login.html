@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VeriAI · Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #0d0d0f;
+      --surface: #141418;
+      --surface2:#1c1c22;
+      --border:  rgba(255,255,255,0.07);
+      --accent:  #c8f54a;
+      --text:    #f0ede8;
+      --muted:   #6b6b7a;
+      --ai:      #f87171;
+      --radius:  16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Atmospheric orbs */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(200,245,74,0.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -100px; right: -100px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,107,53,0.05) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* Floating grid background */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(200,245,74,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,245,74,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    }
+
+    .login-card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      animation: fadeUp 0.6s ease both;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,245,74,0.04);
+    }
+
+    .logo-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(200,245,74,0.08);
+      border: 1px solid rgba(200,245,74,0.2);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 28px;
+    }
+    .logo-tag::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+    h1 span { color: var(--accent); font-style: italic; }
+
+    .tagline {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* Google Sign-In Button */
+    .btn-google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 15px 24px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-google:hover {
+      background: #242430;
+      border-color: rgba(255,255,255,0.18);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .btn-google:active { transform: translateY(0); }
+    .btn-google:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .google-icon {
+      width: 20px; height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* Loading spinner inside button */
+    .btn-spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .btn-google.loading .google-icon,
+    .btn-google.loading .btn-label { display: none; }
+    .btn-google.loading .btn-spinner { display: block; }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--ai);
+      margin-top: 16px;
+      text-align: left;
+      line-height: 1.5;
+    }
+    .error-msg.visible { display: flex; gap: 8px; align-items: flex-start; }
+
+    .footer-note {
+      margin-top: 28px;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      line-height: 1.6;
+    }
+    .footer-note a {
+      color: var(--accent);
+      text-decoration: none;
+      opacity: 0.8;
+    }
+    .footer-note a:hover { opacity: 1; }
+
+    /* Decorative accent line */
+    .accent-line {
+      width: 40px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 99px;
+      margin: 0 auto 28px;
+      opacity: 0.5;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <div class="login-card">
+    <div class="logo-tag">VeriAI</div>
+
+    <h1>Detect <span>AI</span><br/>with confidence.</h1>
+    <div class="accent-line"></div>
+    <p class="tagline">Sign in to analyse text, images &amp; video<br/>for AI-generated content.</p>
+
+    <div class="divider"><span>CONTINUE WITH</span></div>
+
+    <button class="btn-google" id="googleSignInBtn">
+      <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      <span class="btn-label">Continue with Google</span>
+      <div class="btn-spinner"></div>
+    </button>
+
+    <div class="error-msg" id="errorMsg">
+      <span>⚠️</span>
+      <span id="errorText">Something went wrong. Please try again.</span>
+    </div>
+
+    <p class="footer-note">
+      By signing in, you agree to use VeriAI responsibly.<br/>
+      Results are probabilistic, not definitive.
+    </p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // ─────────────────────────────────────────────────────────────
+    // 🔧 REPLACE these values with your Firebase project config.
+    //    Get them from: Firebase Console → Project Settings → Your Apps
+    // ─────────────────────────────────────────────────────────────
+   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBmcl44YTVLKrar8Q9504h5BOoMitL9pQk",
+  authDomain: "veriai-184a1.firebaseapp.com",
+  projectId: "veriai-184a1",
+  storageBucket: "veriai-184a1.firebasestorage.app",
+  messagingSenderId: "788498336724",
+  appId: "1:788498336724:web:83d45237675fcbbd332441",
+  measurementId: "G-PBZYMHMRJD"
+};
+    // ─────────────────────────────────────────────────────────────
+
+    const app      = initializeApp(firebaseConfig);
+    const auth     = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const btn       = document.getElementById('googleSignInBtn');
+    const errorMsg  = document.getElementById('errorMsg');
+    const errorText = document.getElementById('errorText');
+
+    // If already signed in, go straight to the app
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = 'index.html';
+    });
+
+    btn.addEventListener('click', async () => {
+      btn.classList.add('loading');
+      btn.disabled = true;
+      errorMsg.classList.remove('visible');
+
+      try {
+        await signInWithPopup(auth, provider);
+        // onAuthStateChanged will fire and redirect
+      } catch (err) {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+
+        const friendly = {
+          'auth/popup-closed-by-user':     'Sign-in window was closed. Please try again.',
+          'auth/popup-blocked':            'Pop-up was blocked by your browser. Please allow pop-ups for this site.',
+          'auth/cancelled-popup-request':  'Sign-in was cancelled. Please try again.',
+          'auth/network-request-failed':   'Network error. Check your connection and retry.',
+        };
+        errorText.textContent = friendly[err.code] || `Error: ${err.message}`;
+        errorMsg.classList.add('visible');
+      }
+    });
+  </script>
+</body>
+</html>

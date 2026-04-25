@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VeriAI · AI Content Detector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <!-- Professional Top Navigation -->
+  <nav style="position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(10,10,12,0.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.06);padding:14px 0;">
+    <div style="max-width:1200px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;">
+      <a href="homepage.html" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:#f0ede8;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;transition:color 0.2s;opacity:0.7;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;">
+          <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.02em;">Home</span>
+      </a>
+      
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#c8f54a;"></div>
+        <span style="font-family:'DM Mono',monospace;font-size:12px;color:#c8f54a;letter-spacing:0.05em;">VeriAI</span>
+      </div>
+      
+      <div style="width:80px;"></div> <!-- spacer for balance -->
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top:64px;">
+
+   
+    <header>
+      <h1>Is it <span>AI</span> or Human?</h1>
+      <p class="subtitle">Detect AI-generated text and video with linguistic &amp; visual fingerprint analysis.</p>
+    </header>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabText" data-mode="text">
+        <span class="tab-icon">📝</span> Text Analysis
+      </button>
+      <button class="tab-btn" id="tabVideo" data-mode="video">
+        <span class="tab-icon">🎬</span> Video Analysis
+      </button>
+      <button class="tab-btn" id="tabImage" data-mode="image">
+        <span class="tab-icon">🖼️</span> Image Analysis
+      </button>
+    </div>
+
+    <div class="panel" id="panelText">
+      <div class="card">
+        <div class="textarea-wrap">
+          <textarea id="inputText" placeholder="Paste your paragraph here — an essay, article, email, or any written text..."></textarea>
+        </div>
+        <div class="word-count">
+          <span id="wordCount">0</span> words · <span id="charCount">0</span> chars
+        </div>
+
+        <p class="samples-label">Try a sample →</p>
+        <div class="samples-row">
+          <span class="sample-pill" data-idx="0">📖 Human sample</span>
+          <span class="sample-pill" data-idx="1">🤖 AI sample</span>
+          <span class="sample-pill" data-idx="2">📝 Mixed sample</span>
+        </div>
+
+        <div class="actions">
+          <button class="btn-analyze" id="analyzeTextBtn">Analyse Text</button>
+          <button class="btn-clear"   id="clearTextBtn">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="panelVideo">
+      <div class="card">
+
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">🎬</div>
+          <div class="drop-title">Drop a video file here</div>
+          <div class="drop-sub">or click to browse &nbsp;·&nbsp; MP4, WebM, MOV &nbsp;·&nbsp; max 200 MB</div>
+          <input type="file" id="videoInput" accept="video/*" hidden/>
+        </div>
+
+       
+        <div class="video-preview hidden" id="videoPreview">
+          <video id="videoEl" muted playsinline controls></video>
+          <div class="video-meta" id="videoMeta"></div>
+          <canvas id="frameCanvas" hidden></canvas>
+        </div>
+
+        <div class="video-actions hidden" id="videoActions">
+          <button class="btn-analyze" id="analyzeVideoBtn">Analyse Video</button>
+          <button class="btn-clear"   id="clearVideoBtn">Remove</button>
+        </div>
+
+      </div>
+
+      <div id="frameStrip" class="frame-strip hidden"></div>
+    </div>
+    
+<div class="panel hidden" id="panelImage">
+  <div class="card">
+    <div class="drop-zone" id="imgDropZone">
+      <div class="drop-icon">🖼️</div>
+      <div class="drop-title">Drop an image here</div>
+      <div class="drop-sub">or click to browse &nbsp;·&nbsp; JPG, PNG, WebP &nbsp;·&nbsp; max 20 MB</div>
+      <input type="file" id="imageInput" accept="image/*" hidden/>
+    </div>
+
+    <div class="video-preview hidden" id="imgPreview">
+      <img id="imgEl" style="width:100%;max-height:360px;border-radius:12px;display:block;object-fit:contain;background:#000"/>
+      <div class="video-meta" id="imgMeta"></div>
+      <canvas id="imgCanvas" hidden></canvas>
+    </div>
+
+    <div class="video-actions hidden" id="imgActions">
+      <button class="btn-analyze" id="analyzeImageBtn">Analyse Image</button>
+      <button class="btn-clear"   id="clearImageBtn">Remove</button>
+    </div>
+  </div>
+</div>
+
+    <div id="resultArea"></div>
+
+  </div>
+
+  <footer class="page-footer">
+    Powered by heuristic linguistic &amp; visual analysis · Results are probabilistic, not definitive
+  </footer>
+
+  <!-- Supabase Library (MUST be before script.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Your main script -->
+  <script src="script.js"></script>
+
+  <!-- Firebase Auth Guard -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // ─────────────────────────────────────────────────────────────
+    // 🔧 REPLACE with your Firebase config (same as login.html)
+    // ─────────────────────────────────────────────────────────────
+   const firebaseConfig = {
+  apiKey: "AIzaSyBmcl44YTVLKrar8Q9504h5BOoMitL9pQk",
+  authDomain: "veriai-184a1.firebaseapp.com",
+  projectId: "veriai-184a1",
+  storageBucket: "veriai-184a1.firebasestorage.app",
+  messagingSenderId: "788498336724",
+  appId: "1:788498336724:web:83d45237675fcbbd332441",
+  measurementId: "G-PBZYMHMRJD"
+};
+    // ─────────────────────────────────────────────────────────────
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Hide app content until auth is confirmed
+    document.querySelector('.container').style.visibility = 'hidden';
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        // Not signed in → go to login
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Signed in → show the app
+      document.querySelector('.container').style.visibility = 'visible';
+
+      // ──── SUPABASE: Sync user ────
+      try {
+        const { error } = await window.supabaseClient
+          .from('users')
+          .upsert([
+            {
+              firebase_id: user.uid,
+              email: user.email,
+              name: user.displayName
+            }
+          ], { onConflict: 'firebase_id' });
+        
+        if (error) console.error('Error syncing user to Supabase:', error);
+        else console.log('User synced to Supabase:', user.uid);
+      } catch (err) {
+        console.error('Supabase sync error:', err);
+      }
+
+      // Inject user avatar + sign-out into header
+      const header = document.querySelector('header');
+      const userBar = document.createElement('div');
+      userBar.style.cssText = `
+        display:flex; align-items:center; justify-content:center;
+        gap:10px; margin-bottom:20px; animation: fadeDown 0.5s ease both;
+      `;
+      userBar.innerHTML = `
+        <img src="${user.photoURL || ''}" alt=""
+          style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(200,245,74,0.3);
+                 object-fit:cover;background:#1c1c22;"
+          onerror="this.style.display='none'"/>
+        <span style="font-family:'DM Mono',monospace;font-size:12px;color:#6b6b7a;">
+          ${user.displayName || user.email}
+        </span>
+        <button id="signOutBtn" style="
+          background:transparent;border:1px solid rgba(255,255,255,0.07);border-radius:999px;
+          color:#6b6b7a;font-family:'DM Sans',sans-serif;font-size:11px;padding:4px 12px;
+          cursor:pointer;transition:color 0.2s,border-color 0.2s;
+        ">Sign out</button>
+      `;
+      header.insertBefore(userBar, header.firstChild);
+
+      document.getElementById('signOutBtn').addEventListener('mouseenter', e => {
+        e.target.style.color = '#f0ede8';
+        e.target.style.borderColor = 'rgba(255,255,255,0.15)';
+      });
+      document.getElementById('signOutBtn').addEventListener('mouseleave', e => {
+        e.target.style.color = '#6b6b7a';
+        e.target.style.borderColor = 'rgba(255,255,255,0.07)';
+      });
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        await signOut(auth);
+        window.location.href = 'login.html';
+      });
+
+      // Store auth object globally so script.js can access it
+      window.firebaseAuth = auth;
+      window.firebaseUser = user;
+    });
+  </script>
+</body>
+</html>
