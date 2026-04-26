@@ -13,11 +13,17 @@
 const SUPABASE_URL = 'https://YOUR_PROJECT_URL.supabase.co';
 const SUPABASE_KEY = 'YOUR_ANON_KEY';
 
-// Initialize Supabase
-const { createClient } = window.supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-window.supabaseClient = supabaseClient; // Make globally accessible
+// CORRECT - Initialize Supabase properly
+let supabaseClient;
 
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.supabase) {
+    const { createClient } = window.supabase;
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+    window.supabaseClient = supabaseClient;
+    console.log('✅ Supabase initialized');
+  }
+});
 // ─────────────────────────────────────────────────────────────
 
 
