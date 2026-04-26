@@ -10,8 +10,8 @@
 // ─────────────────────────────────────────────────────────────
 // 🔧 SUPABASE CONFIG - REPLACE THESE VALUES
 // ─────────────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://YOUR_PROJECT_URL.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_KEY';
+const SUPABASE_URL = 'https://mrtcidvumccinplwwcsf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tI2S4Ma6Ph-oh2M-zlQASw_jTHsChju';
 
 // CORRECT - Initialize Supabase properly
 let supabaseClient;
