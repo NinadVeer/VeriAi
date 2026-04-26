@@ -550,7 +550,7 @@ Respond ONLY with JSON:
    VIDEO ANALYSIS
    ══════════════════════════════════════════════════════════════ */
 
-const FRAME_COUNT = 10;
+
 
 dropZone.addEventListener('click', () => videoInput.click());
 dropZone.addEventListener('dragover', (e) => {
