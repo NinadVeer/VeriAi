@@ -1,97 +1,55 @@
 /* ═══════════════════════════════════════════════════════════════
-   VeriAI · script.js  (v4.0 with Supabase)
-
-   SUPABASE CONFIGURATION
-   ─────────────────────────────────────────────────────────────
-   Replace these with your actual Supabase credentials
-   Get them from: Supabase → Project Settings → API
+   VeriAI · script.js (v6.0 FINAL - Ready to Paste)
+   
+   Complete AI Detection Engine with Qwen2.5-VL
    ═══════════════════════════════════════════════════════════════ */
 
-// ─────────────────────────────────────────────────────────────
-// 🔧 SUPABASE CONFIG - REPLACE THESE VALUES
-// ─────────────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://mrtcidvumccinplwwcsf.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tI2S4Ma6Ph-oh2M-zlQASw_jTHsChju';
+/* ──────────────────────────────────────────────────────────────
+   CONFIGURATION - UPDATE THESE WITH YOUR ACTUAL KEYS
+   ──────────────────────────────────────────────────────────────
+   Get HF_API_KEY from: huggingface.co → Settings → Access Tokens
+   Get SUPABASE_URL & KEY from: app.supabase.com → Settings → API
+   ────────────────────────────────────────────────────────────── */
 
-// CORRECT - Initialize Supabase properly
+const HF_API_KEY = 'YOUR_HUGGINGFACE_API_KEY';
+const QWEN_MODEL = 'Qwen/Qwen2.5-VL-7B-Instruct';
+const SUPABASE_URL = 'YOUR_SUPABASE_KEY';
+const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+
+const AI_THRESHOLD  = 0.65;
+const AMB_THRESHOLD = 0.35;
+const FRAME_COUNT = 10;
+
+/* ──────────────────────────────────────────────────────────────
+   SUPABASE INITIALIZATION
+   ────────────────────────────────────────────────────────────── */
+
 let supabaseClient;
 
 document.addEventListener('DOMContentLoaded', function() {
-  if (window.supabase) {
-    const { createClient } = window.supabase;
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-    window.supabaseClient = supabaseClient;
-    console.log('✅ Supabase initialized');
+  if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const { createClient } = window.supabase;
+      supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+      window.supabaseClient = supabaseClient;
+      console.log('✅ Supabase initialized successfully');
+    } catch (err) {
+      console.error('❌ Supabase initialization error:', err);
+    }
   }
 });
-// ─────────────────────────────────────────────────────────────
-
-
-/* ═══════════════════════════════════════════════════════════════
-   ORIGINAL SCRIPT.JS CONTENT BELOW
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════════════════════════
-   TruthLens · script.js  (v3.0)
-
-   STRUCTURE
-   ─────────────────────────────────────────────────────────────
-   1.  Constants & configuration          ← EDIT thresholds here
-   2.  DOM references
-   3.  Tab switching
-   4.  TEXT MODE – event listeners
-   5.  TEXT MODE – analysis engine
-   6.  TEXT MODE – UI rendering
-   7.  VIDEO MODE – file handling & drop zone
-   8.  VIDEO MODE – frame extraction       ← EDIT FRAME_COUNT here
-   9.  VIDEO MODE – visual analysis engine ← EDIT signal weights here
-   10. VIDEO MODE – UI rendering
-   11. Shared result renderer
-   12. Helper utilities
-   ═══════════════════════════════════════════════════════════════ */
-
 
 /* ──────────────────────────────────────────────────────────────
-   1. CONSTANTS & CONFIGURATION
-   ──────────────────────────────────────────────────────────────
-   ✏️  EDIT HERE to tune detection sensitivity.
-   ────────────────────────────────────────────────────────────── */
-
-// Number of frames sampled from the video for analysis.
-// More frames = more accurate but slower. Range: 6–20.
-const FRAME_COUNT = 10;
-
-// AI detection threshold:  >= AI_THRESHOLD → "Likely AI"
-// Ambiguous band:           >= AMB_THRESHOLD && < AI_THRESHOLD
-// Human:                    < AMB_THRESHOLD → "Human"
-const AI_THRESHOLD  = 0.65;
-const AMB_THRESHOLD = 0.35;
-
-// Video signal weights (higher = more influence on final score)
-const VIDEO_WEIGHTS = {
-  frameConsistency:  2.0,   // Unnaturally stable frames → AI
-  edgeArtifacts:     1.5,   // Blurring / compression at edges
-  colorUniformity:   1.2,   // Flat, over-smooth colour palettes
-  flickerVariance:   1.5,   // Low flicker = AI upscaled
-  saturationScore:   1.0,   // Hyper-saturation common in AI video
-  noisePattern:      1.0,   // AI video has less natural grain
-};
-
-
-/* ──────────────────────────────────────────────────────────────
-   2. DOM REFERENCES
+   DOM REFERENCES
    ────────────────────────────────────────────────────────────── */
 
 const resultArea     = document.getElementById('resultArea');
-
-// Text mode
 const textarea       = document.getElementById('inputText');
 const wordCountEl    = document.getElementById('wordCount');
 const charCountEl    = document.getElementById('charCount');
 const analyzeTextBtn = document.getElementById('analyzeTextBtn');
 const clearTextBtn   = document.getElementById('clearTextBtn');
 
-// Video mode
 const dropZone       = document.getElementById('dropZone');
 const videoInput     = document.getElementById('videoInput');
 const videoEl        = document.getElementById('videoEl');
@@ -103,15 +61,13 @@ const clearVideoBtn  = document.getElementById('clearVideoBtn');
 const frameCanvas    = document.getElementById('frameCanvas');
 const frameStrip     = document.getElementById('frameStrip');
 
-// Tabs
 const tabText        = document.getElementById('tabText');
 const tabVideo       = document.getElementById('tabVideo');
+const tabImage       = document.getElementById('tabImage');
 const panelText      = document.getElementById('panelText');
 const panelVideo     = document.getElementById('panelVideo');
-const tabImage       = document.getElementById('tabImage');
 const panelImage     = document.getElementById('panelImage');
 
-// Image mode
 const imgDropZone    = document.getElementById('imgDropZone');
 const imageInput     = document.getElementById('imageInput');
 const imgEl          = document.getElementById('imgEl');
@@ -122,9 +78,9 @@ const analyzeImageBtn= document.getElementById('analyzeImageBtn');
 const clearImageBtn  = document.getElementById('clearImageBtn');
 const imgCanvas      = document.getElementById('imgCanvas');
 
-/* ──────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════
    TAB SWITCHING
-   ────────────────────────────────────────────────────────────── */
+   ══════════════════════════════════════════════════════════════ */
 
 const tabs = [
   { btn: tabText,  panel: panelText  },
@@ -134,7 +90,10 @@ const tabs = [
 
 tabs.forEach(({ btn, panel }) => {
   btn.addEventListener('click', () => {
-    tabs.forEach(t => { t.btn.classList.remove('active'); t.panel.classList.add('hidden'); });
+    tabs.forEach(t => { 
+      t.btn.classList.remove('active'); 
+      t.panel.classList.add('hidden'); 
+    });
     btn.classList.add('active');
     panel.classList.remove('hidden');
     resultArea.innerHTML = '';
@@ -142,10 +101,9 @@ tabs.forEach(({ btn, panel }) => {
 });
 
 /* ══════════════════════════════════════════════════════════════
-   TEXT ANALYSIS - POWERED BY QWEN2.5-VL
+   TEXT ANALYSIS - QWEN2.5-VL
    ══════════════════════════════════════════════════════════════ */
 
-// Update word/char count
 textarea.addEventListener('input', () => {
   const text = textarea.value;
   const words = text.trim().split(/\s+/).filter(w => w.length).length;
@@ -162,7 +120,6 @@ clearTextBtn.addEventListener('click', () => {
 
 analyzeTextBtn.addEventListener('click', analyzeText);
 
-// Sample pills
 document.querySelectorAll('.sample-pill').forEach(pill => {
   pill.addEventListener('click', (e) => {
     const idx = parseInt(e.target.dataset.idx);
@@ -184,13 +141,8 @@ async function analyzeText() {
   resultArea.innerHTML = '';
 
   try {
-    // Call Qwen2.5-VL API
     const qwenScore = await analyzeWithQwen(text, 'text');
-    
-    // Combine with fallback heuristic score
     const heuristicScore = computeAIScore(text).confidence;
-    
-    // Weighted ensemble: 80% Qwen, 20% Heuristics
     const finalScore = (qwenScore * 0.8) + (heuristicScore * 0.2);
     const confidence = Math.min(100, Math.max(0, finalScore));
 
@@ -211,7 +163,6 @@ async function analyzeText() {
 
     displayResult('text', result);
 
-    // Save to Supabase
     try {
       await saveAnalysisResult('text', result.confidence, result.verdict, result);
     } catch (err) {
@@ -236,40 +187,24 @@ async function analyzeWithQwen(content, type = 'text') {
     let prompt = '';
 
     if (type === 'text') {
-      prompt = `You are an AI detection expert. Analyze this text and determine if it was written by AI or a human. 
-      
+      prompt = `Analyze this text and determine if it was written by AI or a human.
+
 Text: "${content}"
 
-Respond ONLY with a JSON object (no markdown, no code blocks, just raw JSON):
-{
-  "confidence": <number 0-100>,
-  "reasoning": "<brief explanation>"
-}
+Respond ONLY with a JSON object:
+{"confidence": <0-100>, "reasoning": "<brief>"}
 
-Where confidence 0-50 means human-written, 50-70 means ambiguous, 70-100 means AI-generated.`;
+0-50 = human, 50-70 = ambiguous, 70-100 = AI`;
     } else if (type === 'image') {
-      prompt = `Analyze this image and determine if it was AI-generated or is a real photograph. Look for:
-- Unnatural artifacts or distortions
-- Unusual texture patterns
-- Strange lighting inconsistencies
-- Impossible physics or geometry
+      prompt = `Analyze this image. Is it AI-generated or real? Look for artifacts, unnatural patterns, impossible geometry.
 
 Respond ONLY with JSON:
-{
-  "confidence": <number 0-100>,
-  "artifacts": ["artifact1", "artifact2"],
-  "reasoning": "<brief explanation>"
-}
+{"confidence": <0-100>, "reasoning": "<brief>"}
 
-Where confidence 0-50 means real photo, 50-70 means unclear, 70-100 means AI-generated.`;
+0-50 = real, 50-70 = unclear, 70-100 = AI`;
     } else if (type === 'video') {
-      prompt = `This is a video frame. Analyze if it appears to be from an AI-generated or deepfake video.
-
-Respond ONLY with JSON:
-{
-  "confidence": <number 0-100>,
-  "reasoning": "<brief explanation>"
-}`;
+      prompt = `Analyze if this is from a deepfake or AI video. Respond with JSON:
+{"confidence": <0-100>, "reasoning": "<brief>"}`;
     }
 
     const response = await fetch(
@@ -296,8 +231,6 @@ Respond ONLY with JSON:
     }
 
     const data = await response.json();
-    
-    // Extract text from response
     let responseText = '';
     if (Array.isArray(data) && data[0]?.generated_text) {
       responseText = data[0].generated_text;
@@ -305,11 +238,10 @@ Respond ONLY with JSON:
       responseText = data.generated_text;
     }
 
-    // Parse JSON from response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.warn('Could not extract JSON from response:', responseText);
-      return 50; // Default to ambiguous
+      return 50;
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
@@ -317,13 +249,12 @@ Respond ONLY with JSON:
 
   } catch (error) {
     console.error('Qwen API Error:', error);
-    // Fallback to heuristics if Qwen fails
     return 50;
   }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   FALLBACK HEURISTIC ANALYSIS (if Qwen fails)
+   FALLBACK HEURISTIC ANALYSIS
    ══════════════════════════════════════════════════════════════ */
 
 function computeAIScore(text) {
@@ -348,13 +279,6 @@ function computeAIScore(text) {
   return {
     confidence: Math.round(confidence),
     verdict: verdict,
-    signals: {
-      fillerPhrases: Math.round(filler * 100),
-      sentenceLength: Math.round(senLen * 100),
-      wordVariety: Math.round(varWord * 100),
-      burstiness: Math.round(burst * 100),
-      hedgingLanguage: Math.round(hedging * 100),
-    },
   };
 }
 
@@ -399,7 +323,7 @@ function hedgingPhrases(text) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   IMAGE ANALYSIS - POWERED BY QWEN2.5-VL
+   IMAGE ANALYSIS
    ══════════════════════════════════════════════════════════════ */
 
 imgDropZone.addEventListener('click', () => imageInput.click());
@@ -451,7 +375,6 @@ async function analyzeImage() {
   resultArea.innerHTML = '';
 
   try {
-    // Convert image to base64
     const canvas = document.createElement('canvas');
     const img = new Image();
     
@@ -463,9 +386,7 @@ async function analyzeImage() {
         ctx.drawImage(img, 0, 0);
         const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
 
-        // Call Qwen with image
         const qwenScore = await analyzeImageWithQwen(base64);
-
         const verdict = qwenScore > 65 ? 'AI-Generated' : 'Likely Authentic';
 
         const result = {
@@ -475,8 +396,6 @@ async function analyzeImage() {
             qwenScore: Math.round(qwenScore),
             imageSize: `${img.width}x${img.height}`,
             model: 'Qwen2.5-VL',
-            artifactDetection: Math.round(qwenScore * 0.6),
-            edgeAnalysis: Math.round(qwenScore * 0.4),
           }
         };
 
@@ -485,7 +404,7 @@ async function analyzeImage() {
         try {
           await saveAnalysisResult('image', result.confidence, result.verdict, result);
         } catch (err) {
-          console.warn('Could not save to Supabase:', err.message);
+          console.warn('Could not save:', err.message);
         }
       } catch (error) {
         alert('Analysis Error: ' + error.message);
@@ -517,15 +436,7 @@ async function analyzeImageWithQwen(base64Image) {
         body: JSON.stringify({
           inputs: {
             image: base64Image,
-            text: `Analyze this image. Is it AI-generated or a real photo? Look for artifacts, unnatural patterns, impossible geometry, and digital distortions.
-
-Respond ONLY with JSON:
-{
-  "confidence": <number 0-100>,
-  "reasoning": "<brief>"
-}
-
-0-50 = real, 50-70 = unclear, 70-100 = AI-generated.`
+            text: `Is this AI-generated or real? Respond with JSON: {"confidence": <0-100>}`
           },
           parameters: {
             max_new_tokens: 150
@@ -534,7 +445,7 @@ Respond ONLY with JSON:
       }
     );
 
-    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+    if (!response.ok) return 50;
 
     const data = await response.json();
     const responseText = data[0]?.generated_text || '';
@@ -555,8 +466,6 @@ Respond ONLY with JSON:
 /* ══════════════════════════════════════════════════════════════
    VIDEO ANALYSIS
    ══════════════════════════════════════════════════════════════ */
-
-
 
 dropZone.addEventListener('click', () => videoInput.click());
 dropZone.addEventListener('dragover', (e) => {
@@ -650,11 +559,9 @@ async function analyzeVideo() {
   resultArea.innerHTML = '';
 
   try {
-    // Analyze first frame with Qwen
     const firstFrameScore = await analyzeVideoFrame(extractedFrames[0]);
     const lastFrameScore = await analyzeVideoFrame(extractedFrames[extractedFrames.length - 1]);
     
-    // Average scores
     const confidence = (firstFrameScore + lastFrameScore) / 2;
     const verdict = confidence > 65 ? 'Deepfake Detected' : 
                     confidence > 35 ? 'Inconclusive' : 'Likely Authentic';
@@ -664,7 +571,6 @@ async function analyzeVideo() {
       verdict: verdict,
       signals: {
         framesAnalyzed: extractedFrames.length,
-        consistencyScore: Math.round(Math.abs(firstFrameScore - lastFrameScore) * 10),
         deepfakeRisk: Math.round(confidence),
         model: 'Qwen2.5-VL',
       }
@@ -675,7 +581,7 @@ async function analyzeVideo() {
     try {
       await saveAnalysisResult('video', result.confidence, result.verdict, result);
     } catch (err) {
-      console.warn('Could not save to Supabase:', err.message);
+      console.warn('Could not save:', err.message);
     }
 
   } catch (error) {
@@ -702,7 +608,7 @@ async function analyzeVideoFrame(frameBase64) {
         body: JSON.stringify({
           inputs: {
             image: base64,
-            text: `Is this a video frame from a deepfake or AI-generated video? Respond with JSON: {"confidence": 0-100}`
+            text: `Is this from a deepfake? JSON: {"confidence": 0-100}`
           }
         })
       }
@@ -756,7 +662,7 @@ function displayResult(type, result) {
           <div class="conf-pct" style="text-align:right;font-family:'DM Mono',monospace;font-size:13px;margin-top:6px;font-weight:500;color:${verdictColor};">${result.confidence}%</div>
         </div>
         <div class="divider" style="height:1px;background:var(--border);margin:20px 0;"></div>
-        <div class="signals-title" style="font-size:12px;font-family:'DM Mono',monospace;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">AI Detection Signals</div>
+        <div class="signals-title" style="font-size:12px;font-family:'DM Mono',monospace;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">Detection Signals</div>
         <div class="signals-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           ${Object.entries(result.signals || {}).map(([name, val]) => {
             if (typeof val !== 'number') return '';
@@ -765,7 +671,7 @@ function displayResult(type, result) {
                 <div class="signal-dot" style="width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;background:${val > 50 ? '#f87171' : '#4ade80'};"></div>
                 <div>
                   <div class="signal-name" style="font-size:12px;color:var(--muted);margin-bottom:2px;">${name.replace(/([A-Z])/g, ' $1').trim()}</div>
-                  <div class="signal-val" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);">${val}${typeof val === 'string' ? '' : '%'}</div>
+                  <div class="signal-val" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);">${val}%</div>
                 </div>
               </div>
             `;
@@ -773,7 +679,7 @@ function displayResult(type, result) {
         </div>
         <div class="note" style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--muted);line-height:1.5;margin-top:20px;">
           <span style="font-size:16px;flex-shrink:0;margin-top:1px;">ⓘ</span>
-          <span>Results powered by Qwen2.5-VL AI model. Results are probabilistic and should not be used as definitive proof. Always use human judgment for important decisions.</span>
+          <span>Results powered by Qwen2.5-VL. Results are probabilistic and should not be used as definitive proof. Always use human judgment.</span>
         </div>
       </div>
     </div>
@@ -799,8 +705,8 @@ const SAMPLES = [
 async function saveAnalysisResult(contentType, confidenceScore, verdict, details) {
   try {
     const user = window.firebaseUser;
-    if (!user) {
-      console.warn('No user logged in, skipping Supabase save');
+    if (!user || !supabaseClient) {
+      console.warn('No user or Supabase client');
       return;
     }
 
@@ -828,15 +734,13 @@ async function saveAnalysisResult(contentType, confidenceScore, verdict, details
       ]);
 
     if (error) {
-      console.error('Error saving to Supabase:', error);
+      console.error('Error saving:', error);
     } else {
-      console.log('Result saved successfully');
+      console.log('✅ Result saved to Supabase');
     }
   } catch (err) {
     console.error('Supabase error:', err);
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   END OF SCRIPT
-   ═══════════════════════════════════════════════════════════════ */
+console.log('VeriAI v6.0 - Ready to detect AI content! 🚀');
