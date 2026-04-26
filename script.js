@@ -11,10 +11,10 @@
    Get SUPABASE_URL & KEY from: app.supabase.com → Settings → API
    ────────────────────────────────────────────────────────────── */
 
-const HF_API_KEY = 'YOUR_HUGGINGFACE_API_KEY';
+const HF_API_KEY = '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';
 const QWEN_MODEL = 'Qwen/Qwen2.5-VL-7B-Instruct';
-const SUPABASE_URL = 'YOUR_SUPABASE_KEY';
-const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+const SUPABASE_URL = 'https://mrtcidvumccinplwwcsf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tI2S4Ma6Ph-oh2M-zlQASw_jTHsChju';
 
 const AI_THRESHOLD  = 0.65;
 const AMB_THRESHOLD = 0.35;
