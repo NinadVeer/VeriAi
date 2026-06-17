@@ -1,0 +1,15 @@
+# ── Secrets ────────────────────────────────────────────────
+backend/.env
+backend/config/firebase-service-account.json
+backend/config/*.json
+
+# ── Node modules ───────────────────────────────────────────
+backend/node_modules/
+
+# ── Logs ───────────────────────────────────────────────────
+backend/logs/
+*.log
+
+# ── OS junk ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

@@ -132,22 +132,21 @@
   <!-- Your main script -->
   <script src="script.js"></script>
 
-  <!-- Firebase Auth - Setup user profile (only if logged in) -->
+  <!-- Firebase Auth -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBmcl44YTVLKrar8Q9504h5BOoMitL9pQk",
-  authDomain: "veriai-184a1.firebaseapp.com",
-  projectId: "veriai-184a1",
-  storageBucket: "veriai-184a1.firebasestorage.app",
-  messagingSenderId: "788498336724",
-  appId: "1:788498336724:web:83d45237675fcbbd332441",
-  measurementId: "G-PBZYMHMRJD"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyBmcl44YTVLKrar8Q9504h5BOoMitL9pQk",
+      authDomain: "veriai-184a1.firebaseapp.com",
+      projectId: "veriai-184a1",
+      storageBucket: "veriai-184a1.firebasestorage.app",
+      messagingSenderId: "788498336724",
+      appId: "1:788498336724:web:83d45237675fcbbd332441",
+      measurementId: "G-PBZYMHMRJD"
+    };
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -155,13 +154,9 @@ const firebaseConfig = {
     document.querySelector('.container').style.visibility = 'hidden';
 
     let authChecked = false;
-
     const timeout = setTimeout(() => {
-      if (!authChecked) {
-        console.warn('Auth timeout - redirecting to login');
-        window.location.href = 'login.html';
-      }
-    }, 3000);
+      if (!authChecked) window.location.href = 'login.html';
+    }, 4000);
 
     onAuthStateChanged(auth, async user => {
       authChecked = true;
@@ -212,18 +207,31 @@ const firebaseConfig = {
       window.firebaseAuth = auth;
       window.firebaseUser = user;
 
+      // ── Supabase user sync ─────────────────────────────────────────────────
+      // Wait for script.js DOMContentLoaded to initialize supabaseClient
+      // (race condition: this Firebase module may fire before it's ready)
       try {
-        await window.supabaseClient
-          .from('users')
-          .upsert([
-            {
-              firebase_id: user.uid,
-              email: user.email,
-              name: user.displayName
-            }
-          ], { onConflict: 'firebase_id' });
+        let attempts = 0;
+        while (!window.supabaseClient && attempts < 20) {
+          await new Promise(r => setTimeout(r, 100));
+          attempts++;
+        }
+        if (window.supabaseClient) {
+          const { error } = await window.supabaseClient
+            .from('users')
+            .upsert([
+              {
+                firebase_id: user.uid,
+                email:       user.email,
+                name:        user.displayName || user.email
+              }
+            ], { onConflict: 'firebase_id' });
+          if (error) console.warn('Supabase upsert error:', error.message);
+        } else {
+          console.warn('Supabase client not available — user sync skipped');
+        }
       } catch (err) {
-        console.warn('Supabase sync:', err.message);
+        console.warn('Supabase sync failed:', err.message);
       }
     });
   </script>
